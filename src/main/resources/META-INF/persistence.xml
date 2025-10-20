@@ -7,7 +7,7 @@
    <persistence-unit name="bancoappPersistenceUnit">
       <!-- If you are running in a production environment, add a managed
          data source, this configuration uses the JakartaEE default data source is just for development and testing! -->
-      <jta-data-source>java:/PostgresDS</jta-data-source>
+      <jta-data-source>java:/PostGreDS</jta-data-source>
 		<properties>
 			<property name="hibernate.cache.use_second_level_cache" value="true" />
 			<property name="hibernate.cache.use_query_cache" value="true" />
