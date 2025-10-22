@@ -1,7 +1,7 @@
-# Proyecto Banco
+# 🧱 Proyecto Banco — Arquitectura y Validación con ArchUnit
 
-Este proyecto es una aplicación Java EE/Jakarta EE desarrollada con **Maven** y desplegable en el servidor de aplicaciones **WildFly**.  
-Implementa una capa de persistencia basada en **JPA (Hibernate)** y sigue una arquitectura modular con servicios, entidades y controladores.
+Este proyecto es una aplicación Java moderna basada en **Javalin** y **JPA (Hibernate)** que sigue una arquitectura **en capas**.  
+Además, incorpora ejercicios con **ArchUnit** para que el estudiante valide las dependencias y convenciones de la arquitectura.
 
 ---
 
@@ -11,101 +11,84 @@ Implementa una capa de persistencia basada en **JPA (Hibernate)** y sigue una ar
 banco/
  ├── src/
  │   ├── main/
- │   │   ├── java/           # Código fuente Java
- │   │   ├── resources/      # Archivos de configuración (persistence.xml, log4j, etc.)
- │   │   └── webapp/         # Archivos web (JSP, JSF, HTML, WEB-INF)
- │   └── test/               # Pruebas unitarias
- ├── pom.xml                 # Archivo de configuración Maven
+ │   │   ├── java/
+ │   │   │   ├── cl/ucn/app/          # Punto de entrada (App.java)
+ │   │   │   ├── cl/ucn/web/          # Rutas HTTP y controladores
+ │   │   │   ├── cl/ucn/service/      # Lógica de negocio
+ │   │   │   ├── cl/ucn/persistence/  # Acceso a datos (JPA)
+ │   │   │   └── cl/ucn/bean/         # Entidades JPA
+ │   │   └── resources/
+ │   │       ├── META-INF/persistence.xml
+ │   │       ├── public/              # Archivos HTML (UI Javalin)
+ │   │       └── data.sql
+ │   └── test/
+ │       └── java/cl/ucn/arch/        # Tests de arquitectura (ArchUnit)
+ ├── pom.xml
  └── README.md
 ```
 
 ---
 
-## ⚙️ Configuración del entorno
+## ⚙️ Requisitos
 
-### Requisitos previos
-
-- **JDK** 17 o superior  
-- **Apache Maven** 3.8+  
-- **WildFly** 26 o superior  
-- **PostgreSQL** (o tu base de datos preferida)
-- Driver JDBC instalado en WildFly
+- **JDK** 17 o superior
+- **Apache Maven** 3.8+
+- **SQLite** (usado por defecto en `persistence.xml`)
 
 ---
 
-## 🧩 Configuración de la base de datos
+## 🚀 Ejecución del Proyecto
 
-1. Crear una base de datos (por ejemplo `banco`).
-2. Configurar el *datasource* en WildFly:
+### Compilación y ejecución con Maven
 
-   ```bash
-   /subsystem=datasources/jdbc-driver=postgresql:add(
-     driver-name=postgresql,
-     driver-module-name=org.postgresql,
-     driver-class-name=org.postgresql.Driver
-   )
-
-   /subsystem=datasources/data-source=BancoDS:add(
-     jndi-name=java:/jdbc/BancoDS,
-     driver-name=postgresql,
-     connection-url=jdbc:postgresql://localhost:5432/banco,
-     user-name=usuario,
-     password=secreto,
-     jta=true, use-ccm=true
-   )
-   ```
-
-3. Verificar el JNDI en el log de WildFly:  
-   ```
-   Bound data source [java:/jdbc/BancoDS]
-   ```
-
----
-
-## 🧠 Configuración de `persistence.xml`
-
-Ubicado en `src/main/resources/META-INF/persistence.xml`:
-
-```xml
-<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
-                                 https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
-             version="3.1">
-  <persistence-unit name="bancoappPersistenceUnit" transaction-type="JTA">
-    <jta-data-source>java:/PostGreDS</jta-data-source>
-    <properties>
-      <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-      <property name="hibernate.hbm2ddl.auto" value="update"/>
-      <property name="hibernate.show_sql" value="true"/>
-    </properties>
-  </persistence-unit>
-</persistence>
-```
-
----
-
-## 🚀 Compilación y despliegue con Maven
-
-### 1️⃣ Limpiar y compilar 
-
-```bash
-mvn clean install
-```
-
-Esto limpia el proyecto y genera el archivo WAR en `target/`, sin realizar el despliegue automático.
-
-
-## Ejecución
 ```bash
 mvn -DskipTests=true clean compile exec:java
 ```
 
-_---_
+El proyecto levanta un servidor **Javalin** en `http://localhost:7070/`  
+y sirve los HTML desde `src/main/resources/public/`.
 
-## 👩‍💻 Autores
+---
 
-- **Daniel San Martín** — Universidad Católica del Norte  
+## 🧩 Ejercicios de Arquitectura (ArchUnit)
+
+El proyecto incluye una carpeta `src/test/java/cl/ucn/arch/` con ejercicios que validan las dependencias entre capas.
+
+### 1️⃣ Ejercicio: Reglas de capas
+Archivo: `LayeringRulesTest.java`  
+Define las dependencias permitidas entre paquetes (`app`, `web`, `service`, `persistence`, `bean`).
+
+### 2️⃣ Ejercicio: Evitar dependencias prohibidas
+Archivo: `NoDirectWebToPersistenceTest.java`  
+Verifica que `web` no use clases de `persistence` directamente.
+
+### 3️⃣ Ejercicio: Convenciones de nombres
+Archivo: `NamingConventionsTest.java`  
+Asegura que las clases terminen en `Controller`, `Service`, `Repository`, etc.
+
+### 4️⃣ Ejercicio: Prohibir uso directo de entidades
+Archivo: `WebMustNotUseBeanDirectlyTest.java`  
+Impide que `web` importe entidades JPA (`cl.ucn.bean.*`), promoviendo el uso de DTOs.
+
+### 5️⃣ Ejercicio: Estructura mínima requerida
+Archivo: `PresenceTest.java`  
+Falla hasta que el estudiante cree las clases mínimas requeridas (Controller, Service, Repository, etc.).
+
+---
+
+## 📘 Cómo ejecutar los tests
+
+```bash
+mvn test
+```
+
+Los resultados mostrarán violaciones de arquitectura hasta que se cumplan las reglas definidas.
+
+---
+
+## 👩‍💻 Autor
+
+**Daniel San Martín** — Universidad Católica del Norte
 
 ---
 
