@@ -1,24 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<persistence version="3.0"
-   xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-   xsi:schemaLocation="
-        https://jakarta.ee/xml/ns/persistence
-        https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
-   <persistence-unit name="bancoappPersistenceUnit">
-      <!-- If you are running in a production environment, add a managed
-         data source, this configuration uses the JakartaEE default data source is just for development and testing! -->
-      <jta-data-source>java:/PostGreDS</jta-data-source>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+	<persistence-unit name="bancoapp" transaction-type="RESOURCE_LOCAL">
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+		<!-- Entidades -->
+		<class>cl.ucn.bean.Cliente</class>
 		<properties>
-			<property name="hibernate.cache.use_second_level_cache" value="true" />
-			<property name="hibernate.cache.use_query_cache" value="true" />
-			<property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-			<property name="hibernate.connection.useUnicode" value="true" />
-			<property name="hibernate.connection.characterEncoding" value="UTF-8" />
-			<property name="hibernate.connection.charSet" value="UTF-8" />
-			<property name="hibernate.hbm2ddl.auto" value="update" />
-			<property name="hibernate.show_sql" value="false"/>
-			<property name="hibernate.temp.use_jdbc_metadata_defaults" value="false" />
-			<property name="javax.persistence.sql-load-script-source" value="data.sql" />
+			<!-- SQLite -->
+			<property name="jakarta.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
+			<property name="jakarta.persistence.jdbc.url" value="jdbc:sqlite:banco.db"/>
+			<property name="hibernate.dialect" value="org.hibernate.community.dialect.SQLiteDialect"/>
+			<!-- Mostrar SQL (usar CLAVES de Hibernate, no las JPA estándar) -->
+			<property name="hibernate.show_sql" value="true"/>
+			<property name="hibernate.format_sql" value="true"/>
+			<!-- Crear al arrancar y DROPEAR al cerrar el EntityManagerFactory -->
+			<property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+			<!-- Cargar DATA tras crear el esquema -->
+			<property name="jakarta.persistence.sql-load-script-source" value="data.sql"/>
 		</properties>
-   </persistence-unit>
+	</persistence-unit>
 </persistence>

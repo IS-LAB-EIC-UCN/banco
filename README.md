@@ -87,7 +87,7 @@ Ubicado en `src/main/resources/META-INF/persistence.xml`:
 
 ## 🚀 Compilación y despliegue con Maven
 
-### 1️⃣ Limpiar y compilar sin desplegar
+### 1️⃣ Limpiar y compilar 
 
 ```bash
 mvn clean install
@@ -95,59 +95,13 @@ mvn clean install
 
 Esto limpia el proyecto y genera el archivo WAR en `target/`, sin realizar el despliegue automático.
 
-### 2️⃣ Desplegar manualmente en WildFly
 
-Copia el archivo WAR generado a:
-```
-$WILDFLY_HOME/standalone/deployments/
-```
-
-### 3️⃣ Desplegar con Maven automáticamente
-
-Puedes usar el plugin `wildfly-maven-plugin` en el `pom.xml`:
-
-```xml
-<build>
-  <plugins>
-    <plugin>
-      <groupId>org.wildfly.plugins</groupId>
-      <artifactId>wildfly-maven-plugin</artifactId>
-      <version>4.0.0.Final</version>
-      <configuration>
-        <hostname>localhost</hostname>
-        <port>9990</port>
-        <username>admin</username>
-        <password>admin</password>
-      </configuration>
-    </plugin>
-  </plugins>
-</build>
-```
-
-Entonces ejecuta:
-
+## Ejecución
 ```bash
-mvn wildfly:deploy
+mvn -DskipTests=true clean compile exec:java
 ```
 
----
-
-## 🧪 Ejecución y pruebas
-
-- Inicia WildFly:
-  ```bash
-  $WILDFLY_HOME/bin/standalone.sh
-  ```
-- Abre el navegador:
-  ```
-  http://localhost:8080/banco
-  ```
-- Para ejecutar las pruebas unitarias:
-  ```bash
-  mvn test
-  ```
-
----
+_---_
 
 ## 👩‍💻 Autores
 

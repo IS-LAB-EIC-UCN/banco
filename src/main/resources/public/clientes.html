@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clientes — Banco</title>
+    <style>
+        :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+        body { max-width: 980px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { margin: 0 0 1rem 0; }
+        .toolbar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+        a.button, button {
+            padding: .5rem .9rem; border-radius: .6rem; border: 1px solid #1b63d3; background: #1f6fff; color: #fff;
+            text-decoration: none; font-weight: 600; cursor: pointer;
+        }
+        a.button.secondary, button.secondary { background: #f5f7fb; color: #1b63d3; }
+        button.danger { background: #d81d1d; border-color: #b01818; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: .6rem .5rem; border-bottom: 1px solid #e6e6e6; text-align: left; }
+        th { background: #f7f7f9; position: sticky; top: 0; }
+        .muted { color: #666; }
+        .msg { display:none; padding:.7rem 1rem; border-radius:.6rem; margin:.5rem 0; }
+        .msg.ok { display:block; background:#e8f6ea; color:#0b6b2e; border:1px solid #96d1a5; }
+        .msg.err{ display:block; background:#fde8e8; color:#8a1f1f; border:1px solid #f1b4b4; white-space:pre-wrap; }
+        .right { margin-left:auto; }
+        input[type="search"] { padding:.45rem .6rem; border:1px solid #c7c7c7; border-radius:.5rem; min-width: 240px; }
+    </style>
+</head>
+<body>
+<h1>Listado de Clientes</h1>
+
+<div id="msg" class="msg" role="status" aria-live="polite"></div>
+
+<div class="toolbar">
+    <a class="button secondary" href="/index.html">← Volver al inicio</a>
+    <a class="button" href="/ingresarCliente.html">+ Agregar cliente</a>
+    <button id="btnReload" class="secondary">Recargar</button>
+    <input id="q" type="search" placeholder="Filtrar por RUT / nombre" />
+    <span id="count" class="muted right">0 clientes</span>
+</div>
+
+<div class="tablewrap">
+    <table id="tabla">
+        <thead>
+        <tr>
+            <th>RUT</th>
+            <th>Nombre</th>
+            <th style="width:140px">Sueldo</th>
+            <th style="width:120px">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr><td colspan="4" class="muted">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const API = "/api/v1/clientes";
+    const $ = s => document.querySelector(s);
+    const msg = $("#msg");
+    const tbody = $("#tabla tbody");
+    const count = $("#count");
+    const q = $("#q");
+
+    function showMsg(text, ok=false, ms=2500) {
+        msg.textContent = text;
+        msg.className = "msg " + (ok ? "ok" : "err");
+        if (ms) setTimeout(() => (msg.className = "msg"), ms);
+    }
+
+    function formatMoney(n) {
+        if (n == null || isNaN(n)) return "";
+        return new Intl.NumberFormat("es-CL", { style:"currency", currency:"CLP", maximumFractionDigits:0 }).format(n);
+    }
+
+    function toArray(data) {
+        // Acepta ARRAY, {data:[...]} o un objeto único
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.data)) return data.data;
+        if (data && typeof data === "object") return [data];
+        return [];
+    }
+
+    function matchesFilter(cli, term) {
+        term = term.toLowerCase();
+        return (cli?.rut ?? "").toLowerCase().includes(term) ||
+            (cli?.nombre ?? "").toLowerCase().includes(term);
+    }
+
+    async function load() {
+        try {
+            const r = await fetch(API, { headers: { "Accept": "application/json" } });
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            let raw = await r.json();
+            let data = toArray(raw).filter(Boolean);
+
+            const term = q.value.trim();
+            if (term) data = data.filter(c => matchesFilter(c, term));
+
+            render(data);
+        } catch (e) {
+            console.error("Error cargando clientes:", e);
+            tbody.innerHTML = `<tr><td colspan="4" class="muted">Error al cargar: ${e.message}</td></tr>`;
+            showMsg("No se pudo obtener el listado: " + e.message, false, 4000);
+        }
+    }
+
+    function render(list) {
+        if (!list || list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="muted">Sin clientes</td></tr>`;
+            count.textContent = "0 clientes";
+            return;
+        }
+        tbody.innerHTML = list.map(c => {
+            const rut = c?.rut ?? "";
+            const canDelete = !!rut;
+            return `
+          <tr data-rut="${rut}">
+            <td>${rut}</td>
+            <td>${c?.nombre ?? ""}</td>
+            <td>${formatMoney(c?.sueldo)}</td>
+            <td>
+              ${canDelete
+                ? `<button class="danger" onclick="eliminar('${rut}')">Eliminar</button>`
+                : `<span class="muted">—</span>`}
+            </td>
+          </tr>
+        `;
+        }).join("");
+        count.textContent = `${list.length} ${list.length===1 ? "cliente" : "clientes"}`;
+    }
+
+    async function eliminar(rut) {
+        if (!confirm("¿Eliminar cliente RUT " + rut + "?")) return;
+        try {
+            const r = await fetch(API + "/" + encodeURIComponent(rut), { method: "DELETE" });
+            if (r.status !== 204 && !r.ok) throw new Error("HTTP " + r.status);
+            showMsg("Cliente eliminado", true);
+            await load();
+        } catch (e) {
+            showMsg("No se pudo eliminar: " + e.message, false, 3500);
+        }
+    }
+
+    // eventos
+    $("#btnReload").addEventListener("click", load);
+    q.addEventListener("input", () => load());
+
+    // carga inicial
+    load();
+    window.eliminar = eliminar;
+</script>
+</body>
+</html>

@@ -1,15 +1,16 @@
 package cl.ucn.bean;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 
 @Entity
 @Table(name="cliente")
 public class Cliente {
 
 	@Id
+	@Column(nullable=false, unique=true, length=20)
 	int rut;
+	@Column(nullable=false, length=120)
 	String nombre;
 	int sueldo;
 

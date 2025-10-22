@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agregar Cliente</title>
+    <style>
+      :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+      body { max-width: 720px; margin: 3rem auto; padding: 0 1rem; }
+      h1 { margin-bottom: 1rem; }
+      form { display: grid; grid-template-columns: 140px 1fr; gap: .75rem 1rem; align-items: center; }
+      label { font-weight: 600; }
+      input[type="text"], input[type="number"], input[type="email"] {
+        padding: .5rem .6rem; border: 1px solid #c7c7c7; border-radius: .5rem; width: 100%;
+      }
+      .row-span-2 { grid-column: 1 / -1; }
+      .actions { grid-column: 1 / -1; display: flex; gap: .75rem; margin-top: .5rem; }
+      button {
+        padding: .6rem 1rem; border-radius: .6rem; border: 1px solid #1b63d3;
+        background: #1f6fff; color: white; font-weight: 600; cursor: pointer;
+      }
+      button:disabled { opacity: .6; cursor: not-allowed; }
+      .msg { padding: .75rem 1rem; border-radius: .6rem; margin: 1rem 0 0; display: none; }
+      .msg.ok { background: #e8f6ea; color: #0b6b2e; border: 1px solid #96d1a5; }
+      .msg.err { background: #fde8e8; color: #8a1f1f; border: 1px solid #f1b4b4; }
+      small.hint { color: #666; }
+    </style>
+    <script>
+      function hideMessageLater(el, ms=3000) {
+        if (!el) return;
+        setTimeout(() => { el.style.display = "none"; }, ms);
+      }
+      async function onSubmit(e) {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const btn = form.querySelector("button[type=submit]");
+        const msg = document.getElementById("msg");
+
+        const rut = form.rut.value.trim();
+        const nombre = form.nombre.value.trim();
+        const sueldo = form.sueldo.value.trim();
+
+        if (!rut || !nombre || !sueldo) {
+          msg.textContent = "Por favor completa todos los campos requeridos.";
+          msg.className = "msg err"; msg.style.display = "block";
+          hideMessageLater(msg, 3000);
+          return;
+        }
+
+        // Payload: adapta las claves a tu DTO en el backend (agrega sueldo al DTO si aún no existe).
+        const payload = { rut, nombre, sueldo: Number(sueldo) };
+
+        try {
+          btn.disabled = true;
+          const resp = await fetch("/api/v1/clientes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!resp.ok) {
+            const text = await resp.text();
+            throw new Error(text || ("Status " + resp.status));
+          }
+
+          const data = await resp.json();
+
+          msg.innerHTML = "Cliente agregado con éxito. ID: <b>" + (data.id ?? "—") + "</b>";
+          msg.className = "msg ok"; msg.style.display = "block";
+          form.reset();
+          hideMessageLater(msg, 3000);
+        } catch (err) {
+          msg.textContent = "Error al agregar cliente: " + (err?.message || err);
+          msg.className = "msg err"; msg.style.display = "block";
+          hideMessageLater(msg, 4000);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+      window.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("clienteForm");
+        form.addEventListener("submit", onSubmit);
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Formulario para Agregar Cliente</h1>
+
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+
+    <form id="clienteForm" autocomplete="on">
+      <label for="rut">RUT:</label>
+      <input id="rut" name="rut" type="text" required placeholder="12.345.678-9">
+
+      <label for="nombre">Nombre:</label>
+      <input id="nombre" name="nombre" type="text" required placeholder="Nombre Apellido">
+
+      <label for="sueldo">Sueldo:</label>
+      <input id="sueldo" name="sueldo" type="number" min="0" step="1" required placeholder="0">
+
+      <div class="actions">
+        <button type="submit">Agregar Cliente</button>
+        <small class="hint">Se enviará un POST a <code>/api/v1/clientes</code>.</small>
+        <!-- Botón volver -->
+        <button type="button" onclick="window.location.href='/index.html'">
+          Volver
+        </button>
+      </div>
+    </form>
+  </body>
+</html>
